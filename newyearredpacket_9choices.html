@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刮刮乐 | New Year Red Packet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8efd4;
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #d9534f;
+        }
+
+        .packet-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 600px;
+            margin: 30px auto;
+        }
+
+        .scratch-card {
+            position: relative;
+            width: 100px;
+            height: 150px;
+            background-color: #fffae3;
+            border: 2px solid #e1c340;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        .result {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 150px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .funny-message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+
+        .btn-refresh {
+            margin-top: 30px;
+            padding: 10px 20px;
+            background-color: #d9534f;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-refresh:hover {
+            background-color: #c9302c;
+        }
+    </style>
+</head>
+<body>
+    <h1>刮刮乐 | New Year Red Packet</h1>
+    <p>祝你好运！选择一个红包刮开看看你得到多少钱吧！</p>
+    
+    <div class="packet-container" id="packetContainer"></div>
+    
+    <button class="btn-refresh" onclick="window.location.reload()">再来一次</button>
+
+    <script>
+        const amounts = [
+            1000, 800, 600, 500, 300, 200, 100, 10, 0.5
+        ];
+        const funnyMessages = [
+            "小小红包，大大运气！",
+            "钱不多，心意最重要！",
+            "好运红包，发发发！",
+            "今年必定暴富！",
+            "红包虽小，祝福满满！",
+            "下一次可能是1000哦！",
+            "你真幸运，赶紧去买彩票吧！"
+        ];
+
+        const packetContainer = document.getElementById("packetContainer");
+
+        // Shuffle the amounts to make the red packets random
+        const shuffledAmounts = amounts.sort(() => 0.5 - Math.random());
+
+        // Create 9 red packets
+        for (let i = 0; i < 9; i++) {
+            const packet = document.createElement("div");
+            packet.className = "scratch-card";
+
+            const result = document.createElement("div");
+            result.className = "result";
+            result.textContent = `RM ${shuffledAmounts[i]}`;
+            result.style.display = "none";
+
+            const canvas = document.createElement("canvas");
+            canvas.width = 100;
+            canvas.height = 150;
+
+            // Set up the scratch effect
+            const ctx = canvas.getContext("2d");
+            ctx.fillStyle = "silver";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = "destination-out";
+
+            let isScratching = false;
+
+            const startScratch = (e) => {
+                isScratching = true;
+                scratch(e);
+            };
+
+            const scratch = (e) => {
+                if (!isScratching) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+                const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+                ctx.beginPath();
+                ctx.arc(x, y, 15, 0, Math.PI * 2);
+                ctx.fill();
+            };
+
+            const endScratch = () => {
+                isScratching = false;
+
+                // Check if enough area has been scratched
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const totalPixels = imageData.data.length / 4; // Each pixel has 4 values (RGBA)
+                let scratchedPixels = 0;
+
+                for (let i = 3; i < imageData.data.length; i += 4) {
+                    if (imageData.data[i] === 0) scratchedPixels++; // Check alpha value
+                }
+
+                const scratchedPercentage = (scratchedPixels / totalPixels) * 100;
+                if (scratchedPercentage > 60) {
+                    canvas.style.opacity = 0; // Reveal the result
+                    result.style.display = "block";
+                }
+            };
+
+            canvas.addEventListener("mousedown", startScratch);
+            canvas.addEventListener("mousemove", scratch);
+            canvas.addEventListener("mouseup", endScratch);
+            canvas.addEventListener("touchstart", startScratch);
+            canvas.addEventListener("touchmove", scratch);
+            canvas.addEventListener("touchend", endScratch);
+
+            packet.appendChild(result);
+            packet.appendChild(canvas);
+            packetContainer.appendChild(packet);
+        }
+    </script>
+</body>
+</html>
